@@ -3,9 +3,9 @@
 Auto Claim for Tomarket Telegram Bot
 
 # Watch Video Tutorial
-[Click Here](https://youtu.be/6ZPwzPVNArU)
+[Click Here](https://youtu.be/J2x7SHk3jLU)
 
-# Features
+# Featur
 
 - [x] Auto Claim Daily Bonus
 - [x] Auto Claim Claim Farming
