@@ -121,6 +121,10 @@ def login(query_id, use_proxy, checking_tasks, account_number):
             claim_daily_reward(token, proxy)
             claim_farming(token, proxy)
             start_farming(token, proxy)
+            t_stars = level_data(token, proxy)
+            
+            # New rank upgrade function call
+            upgrade_rank(token, proxy, t_stars)
             
             if checking_tasks:
                 check_list(token, proxy, query_id)   
@@ -133,9 +137,10 @@ def login(query_id, use_proxy, checking_tasks, account_number):
                     print(f"{Fore.RED + Style.BRIGHT}No play passes left.")
                     countdown_timer(5)
                     break
-                
+        
     else:
         print(f"{Fore.RED + Style.BRIGHT}Token not found in response for query_id: {query_id}")
+
 
 def check_balance(token, proxy):
     url = "https://api-web.tomarket.ai/tomarket-game/v1/user/balance"
@@ -422,6 +427,57 @@ def claim_game(token, proxy):
         print(f"{Fore.RED + Style.BRIGHT}Failed to get a valid response. Response: {response_json}")
         return None
 
+def level_data(token, proxy):
+    url = "https://api-web.tomarket.ai/tomarket-game/v1/rank/data"
+    headers = {
+        "accept": "application/json, text/plain, */*",
+        "accept-language": "en-US,en;q=0.9",
+        "authorization": token,
+        "sec-ch-ua": "\"Chromium\";v=\"111\", \"Not(A:Brand\";v=\"8\"",
+        "sec-ch-ua-mobile": "?1",
+        "sec-ch-ua-platform": "\"Android\"",
+        "sec-fetch-dest": "empty",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-site": "same-site"
+    }
+    
+    response_json, _ = make_request(url, headers, proxy)
+    if response_json:
+        data = response_json.get("data", {})
+        rank_info = data.get("currentRank", {}).get("name", "Unknown")
+        t_stars = data.get("unusedStars", 0)
+        
+        print(f"Rank: {rank_info}")
+        print(f"Total Stars: {t_stars}")
+        
+        return t_stars
+    return 0    
+
+def upgrade_rank(token, proxy, stars):
+    url = "https://api-web.tomarket.ai/tomarket-game/v1/rank/upgrade"
+    headers = {
+        "accept": "application/json, text/plain, */*",
+        "accept-language": "en-US,en;q=0.9",
+        "authorization": token,
+        "content-type": "application/json",
+        "sec-ch-ua": "\"Chromium\";v=\"111\", \"Not(A:Brand\";v=\"8\"",
+        "sec-ch-ua-mobile": "?1",
+        "sec-ch-ua-platform": "\"Android\"",
+        "sec-fetch-dest": "empty",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-site": "same-site"
+    }
+    
+    body = {"stars": stars}
+    
+    response_json, status_code = make_request(url, headers, body, proxy)
+    if response_json:
+        massage = response_json.get("message")
+        if massage == "Star must be greater than zero":
+        	print("Not Enough Stars to Upgrade Rank")
+        else:
+        	print("Rank Upgrade Successfully")
+    
 def main():
     clear_terminal()
     art()
@@ -438,14 +494,16 @@ def main():
         clear_terminal()
         art()
         
-        account_number = 1  # Initialize account number
-        
         while True:
+            account_number = 1  # Reset account number for each loop iteration
             for query_id in query_ids:
                 login(query_id.strip(), use_proxy, checking_tasks, account_number)
                 account_number += 1  # Increment account number
             
-            countdown_timer(2*60*60)
+            countdown_timer(1*60*60)
+            clear_terminal()
+            art()
+
 
     except FileNotFoundError:
         print(f"{Fore.RED + Style.BRIGHT}data.txt file not found. Please make sure the file exists in the same directory.")
