@@ -1,0 +1,13 @@
+# Token and Proxy Files
+token.txt
+proxy.txt
+
+# Data Files
+data.txt
+
+# Compiled Python Files
+*.pyc
+__pycache__/
+
+# Environment Files
+.env
