@@ -84,7 +84,7 @@ def make_request(url, headers, body=None, proxy=None):
 
 def save_token(query_id, token):
     with open("token.txt", "w") as file:
-        file.write(f"{query_id}: {token}\n")
+        file.write(f"{token}\n")
 
 def login(query_id, use_proxy, checking_tasks, account_number):
     url = "https://api-web.tomarket.ai/tomarket-game/v1/user/login"
@@ -112,7 +112,9 @@ def login(query_id, use_proxy, checking_tasks, account_number):
         return
     
     response_json, status_code = make_request(url, headers, body, proxy)
+    
     if response_json:
+        # Handle successful login
         token = response_json.get("data", {}).get("access_token")
         if token:
             save_token(query_id, token)
@@ -122,9 +124,9 @@ def login(query_id, use_proxy, checking_tasks, account_number):
             claim_farming(token, proxy)
             start_farming(token, proxy)
             t_stars = level_data(token, proxy)
-            
-            # New rank upgrade function call
             upgrade_rank(token, proxy, t_stars)
+            combo_claim(token, proxy)
+            daily_combo(token, proxy)
             
             if checking_tasks:
                 check_list(token, proxy, query_id)   
@@ -138,9 +140,11 @@ def login(query_id, use_proxy, checking_tasks, account_number):
                     countdown_timer(5)
                     break
         
+        else:
+            print(f"{Fore.RED + Style.BRIGHT}Query ID Expired")   
+    
     else:
-        print(f"{Fore.RED + Style.BRIGHT}Token not found in response for query_id: {query_id}")
-
+        print(f"{Fore.RED + Style.BRIGHT}Unexpected status code: {status_code}")
 
 def check_balance(token, proxy):
     url = "https://api-web.tomarket.ai/tomarket-game/v1/user/balance"
@@ -166,7 +170,6 @@ def check_balance(token, proxy):
         print(f"{Fore.CYAN + Style.BRIGHT}Play Pass: {play_pass}")
         return game_id, play_pass  # Return play_pass as well
     return None, None
-
 
 def claim_daily_reward(token, proxy):
     url = "https://api-web.tomarket.ai/tomarket-game/v1/daily/claim"
@@ -201,7 +204,6 @@ def claim_daily_reward(token, proxy):
             print(f"{Fore.RED + Style.BRIGHT}Response Text:", response_json)
     else:
         print(f"{Fore.RED + Style.BRIGHT}Failed to claim daily reward.")
-
 
 def check_list(token, proxy, query_id):
     url = "https://api-web.tomarket.ai/tomarket-game/v1/tasks/list"
@@ -306,7 +308,6 @@ def task_claim(token, proxy, task_id, task_name):
             print(f"{Fore.RED + Style.BRIGHT}Task Not Complete: {task_name}")
     else:
         print(f"{Fore.RED + Style.BRIGHT}Failed to get a valid response.")
-
 
 def claim_farming(token, proxy):
     url = "https://api-web.tomarket.ai/tomarket-game/v1/farm/claim"
@@ -447,8 +448,8 @@ def level_data(token, proxy):
         rank_info = data.get("currentRank", {}).get("name", "Unknown")
         t_stars = data.get("unusedStars", 0)
         
-        print(f"Rank: {rank_info}")
-        print(f"Total Stars: {t_stars}")
+        print(f"{Fore.CYAN + Style.BRIGHT}Rank: {rank_info}")
+        print(f"{Fore.YELLOW + Style.BRIGHT}Total Stars: {t_stars}")
         
         return t_stars
     return 0    
@@ -474,9 +475,66 @@ def upgrade_rank(token, proxy, stars):
     if response_json:
         massage = response_json.get("message")
         if massage == "Star must be greater than zero":
-        	print("Not Enough Stars to Upgrade Rank")
+        	print(f"{Fore.RED + Style.BRIGHT}Not Enough Stars to Upgrade Rank")
         else:
-        	print("Rank Upgrade Successfully")
+        	print(f"{Fore.GREEN + Style.BRIGHT}Rank Upgrade Successfully")
+
+def combo_claim(token, proxy):
+    url = "https://api-web.tomarket.ai/tomarket-game/v1/tasks/claim"
+    headers = {
+        "accept": "application/json, text/plain, */*",
+        "accept-language": "en-US,en;q=0.9",
+        "authorization": token,
+        "content-type": "application/json",
+        "sec-ch-ua": "\"Chromium\";v=\"111\", \"Not(A:Brand\";v=\"8\"",
+        "sec-ch-ua-mobile": "?1",
+        "sec-ch-ua-platform": "\"Android\"",
+        "sec-fetch-dest": "empty",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-site": "same-site"
+    }
+    
+    body = {"task_id": 1028}
+    
+    response_json, status_code = make_request(url, headers, body, proxy)
+
+def daily_combo(token, proxy):
+    url = "https://api-web.tomarket.ai/tomarket-game/v1/tasks/hidden"
+    headers = {
+        "accept": "application/json, text/plain, */*",
+        "accept-language": "en-US,en;q=0.9",
+        "authorization": token,
+        "content-type": "application/json",
+        "sec-ch-ua": "\"Chromium\";v=\"111\", \"Not(A:Brand\";v=\"8\"",
+        "sec-ch-ua-mobile": "?1",
+        "sec-ch-ua-platform": "\"Android\"",
+        "sec-fetch-dest": "empty",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-site": "same-site"
+    }
+    
+    response_json, status_code = make_request(url, headers, proxy)
+    
+    if status_code == 200 and response_json:
+        # Ensure the "data" field is a list and has at least one item
+        data_list = response_json.get("data", [])
+        
+        if data_list and isinstance(data_list, list):
+            task = data_list[0]  # Access the first task
+            
+            # Check the task status
+            task_status = task.get("status", -1)
+            
+            if task_status == 0:
+                print(f"{Fore.RED + Style.BRIGHT}Daily Combo Not Claimed")
+            elif task_status == 3:
+                print(f"{Fore.YELLOW + Style.BRIGHT}Daily Combo Already Claimed")
+            else:
+                print(f"Unexpected status: {task_status}, task info: {task}")
+        else:
+            print(f"{Fore.RED}No valid data found in the response.")
+    else:
+        print(f"{Fore.RED}Failed to fetch daily combo, status code: {status_code}")
     
 def main():
     clear_terminal()
@@ -503,7 +561,6 @@ def main():
             countdown_timer(1*60*60)
             clear_terminal()
             art()
-
 
     except FileNotFoundError:
         print(f"{Fore.RED + Style.BRIGHT}data.txt file not found. Please make sure the file exists in the same directory.")
