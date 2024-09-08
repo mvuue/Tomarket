@@ -101,7 +101,7 @@ def login(query_id, use_proxy, checking_tasks, account_number):
     }
     body = {
         "init_data": query_id,
-        "invite_code": "",
+        "invite_code": "00000sc0",
         "from": "",
         "is_bot": False
     }
